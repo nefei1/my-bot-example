@@ -11,12 +11,12 @@ pip3 install poetry
 poetry install
 ```
 
-## Linux
+### Linux
 ```
 poetry run python3 -m src
 ```
 
-## Windows
+### Windows
 ```
 poetry run python -m src
 ```
