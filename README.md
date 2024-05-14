@@ -9,4 +9,14 @@ cd my-bot-example
 pip3 install poetry
 
 poetry install
-poetry run python3 -m src #if you used linux else poetry run python -m src
+```
+
+Linux
+```
+poetry run python3 -m src
+```
+
+Windows
+```
+poetry run python -m src
+```
