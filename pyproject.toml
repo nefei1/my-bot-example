@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "aiogram-bot-template"
+name = "my-bot-example"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
