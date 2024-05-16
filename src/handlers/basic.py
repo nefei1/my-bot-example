@@ -2,20 +2,14 @@ from contextlib import suppress
 
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message, CallbackQuery
 from aiogram.exceptions import TelegramBadRequest
 from aiogram_i18n import I18nContext
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.db import Database, User
+from src.keyboards import lang_markup
 
 router = Router()
-
-def lang_markup(uid: int) -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="🇺🇸 English", callback_data=f"choose_lang:en:{uid}"), InlineKeyboardButton(text="🇷🇺 Русский", callback_data=f"choose_lang:ru:{uid}"))
-        
-    return builder.as_markup()
 
 @router.message(Command('start'))
 async def start_cmd(m: Message, i18n: I18nContext, user: User):

@@ -18,6 +18,7 @@ from src.handlers import get_routers
 from src.middlewares import DbMiddleware, Throttling, UserMiddleware, CallbackMiddleware
 from src.data import config
 from src.db import Base, UserManager
+from src.keyboards import set_commands
 
 async def init_db(dp: Dispatcher):
     engine = create_async_engine(config.DB_LINK)
@@ -51,8 +52,8 @@ def init_loggers(dp: Dispatcher):
 
     logger.remove()
     logger.add(sys.stderr, format=fmt)
-    logger.add(aiogram_file_dir, format=fmt, filter=make_filter('aiogram'))
-    logger.add(database_file_dir, format=fmt, filter=make_filter("database"))
+    logger.add(aiogram_file_dir, format=fmt, filter=make_filter('aiogram'), rotation="100MB")
+    logger.add(database_file_dir, format=fmt, filter=make_filter("database"), rotation="100MB")
 
     aiogram_logger = logger.bind(name="aiogram")
     database_logger = logger.bind(name="database")
@@ -84,6 +85,8 @@ async def main():
 
     handler_routers = get_routers()
     dp.include_routers(handler_routers)
+
+    await set_commands(bot)
 
     if config.WEBHOOK_URL:
         app = web.Application()
