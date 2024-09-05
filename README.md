@@ -2,7 +2,7 @@ This is example of bots that I do
 
 # Launch
 
-```
+<code>```
 git clone "https://github.com/nefei1/my-bot-example"
 cd my-bot-example
 
@@ -12,4 +12,4 @@ poetry install
 
 poetry run python -m src
 
-```
+```</code>
