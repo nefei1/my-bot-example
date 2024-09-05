@@ -9,9 +9,7 @@ cd my-bot-example
 pip3 install poetry
 
 poetry install
-```
 
-### Windows
-```
 poetry run python -m src
+
 ```
