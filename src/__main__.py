@@ -3,8 +3,8 @@ import sys
 import asyncio
 from loguru import logger
 from aiohttp import web
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiogram import Dispatcher, Bot
 from aiogram.enums import ParseMode 
 from aiogram.client.default import DefaultBotProperties
