@@ -1,6 +1,7 @@
 import os
 import sys
 import asyncio
+from contextlib import suppress
 from loguru import logger
 from aiohttp import web
 
@@ -117,7 +118,5 @@ async def shutdown(bot: Bot, aio_logger):
     await bot.session.close()
 
 if __name__ == "__main__":
-    try:
+    with suppress(KeyboardInterrupt):
         asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
