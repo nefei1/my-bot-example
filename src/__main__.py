@@ -44,17 +44,23 @@ def make_filter(name):
         return record["extra"].get("name") == name
     return filter
 
+def format_filter(message):
+    if message["level"].name == "ERROR":
+        return "\n\n[<red>{level}</red>] \u2014 <b><blue>{extra[name]}</blue></b>\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><red>{message}</red></b>"
+    elif message["level"].name in ["WARNING", "DEBUG"]:
+        return "\n\n[<yellow>{level}</yellow>] \u2014 <b><blue>{extra[name]}</blue></b>\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><yellow>{message}</yellow></b>"
+    else:
+        return "\n\n[<green>{level}</green>] \u2014 <b><blue>{extra[name]}</blue></b>\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><green>{message}</green></b>"
+
 def init_loggers(dp: Dispatcher):
     folder_dir = os.path.join(os.path.dirname(os.path.abspath(__name__)).replace("\\src", ''), 'logs')
     aiogram_file_dir = os.path.join(folder_dir, "aiogram_logs.txt")
     database_file_dir = os.path.join(folder_dir, "database_logs.txt")
 
-    fmt = "[{level}]\n| Time: <green>{time:YYYY-MM-DD HH:mm:ss}</green>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<yellow>{message}</yellow>\n"
-
     logger.remove()
-    logger.add(sys.stderr, format=fmt)
-    logger.add(aiogram_file_dir, format=fmt, filter=make_filter('aiogram'), rotation="100MB")
-    logger.add(database_file_dir, format=fmt, filter=make_filter("database"), rotation="100MB")
+    logger.add(sys.stderr, format=format_filter)
+    logger.add(aiogram_file_dir, format=format_filter, filter=make_filter('aiogram'), rotation="100MB")
+    logger.add(database_file_dir, format=format_filter, filter=make_filter("database"), rotation="100MB")
 
     aiogram_logger = logger.bind(name="aiogram")
     database_logger = logger.bind(name="database")
