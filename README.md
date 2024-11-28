@@ -1,5 +1,9 @@
 This is example of bots that I do
 
+## Stack
+aiogram 3
+sqlalchemy + postgres 
+
 # Launch
 
 ```
