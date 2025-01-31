@@ -6,9 +6,9 @@ env.read_env()
 BOT_TOKEN: str = env.str("BOT_TOKEN")
 
 WEBHOOK_SERVER_HOST: str = env.str("WEBHOOK_SERVER_HOST")
-WEBHOOK_SERVER_PORT: int = env.str("WEBHOOK_SERVER_PORT")
+WEBHOOK_SERVER_PORT: int = env.int("WEBHOOK_SERVER_PORT") if env.int("WEBHOOK_SERVER_PORT") else None
 WEBHOOK_URL: str = env.str("WEBHOOK_URL")
-WEBHOOK_SERVER_PATH: str = env.str("WEBHOOK_SERVER_PATH")
+WEBHOOK_SERVER_PATH: str = '/' + BOT_TOKEN
 
 DB_USER: str = env.str("DB_USER")
 DB_PASSWORD: str = env.str("DB_PASSWORD")

@@ -16,10 +16,12 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import text
 
 from src.handlers import get_routers
-from src.middlewares import DbMiddleware, Throttling, UserMiddleware, CallbackMiddleware
+from src.middlewares import DbMiddleware, Throttling, UserMiddleware, CallbackMiddleware, UnhandledMiddleware
 from src.data import config
 from src.db import Base, UserManager
 from src.keyboards import set_commands
+
+bot = Bot(config.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
 async def init_db(dp: Dispatcher):
     engine = create_async_engine(config.DB_LINK)
@@ -30,55 +32,47 @@ async def init_db(dp: Dispatcher):
         res = await conn.execute(query)
         version = res.scalars().one()
 
-    db_logger = dp['db_logger']
-
     sessionmaker = async_sessionmaker(engine, autoflush=False, expire_on_commit=False)
     dp['sessionmaker'] = sessionmaker
 
     dp.update.outer_middleware(DbMiddleware(sessionmaker=sessionmaker))
 
-    db_logger.info(f"Succesfully connected to database\nVersion - {version}")
-
-def make_filter(name):
-    def filter(record):
-        return record["extra"].get("name") == name
-    return filter
+    logger.info(f"Succesfully connected to database\nVersion - {version}")
 
 def format_filter(message):
     if message["level"].name == "ERROR":
-        return "\n\n[<red>{level}</red>] \u2014 <b><blue>{extra[name]}</blue></b>\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><red>{message}</red></b>"
+        return "\n[<red>{level}</red>]\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><red>{message}</red></b>\n"
     elif message["level"].name in ["WARNING", "DEBUG"]:
-        return "\n\n[<yellow>{level}</yellow>] \u2014 <b><blue>{extra[name]}</blue></b>\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><yellow>{message}</yellow></b>"
+        return "\n[<yellow>{level}</yellow>]\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><yellow>{message}</yellow></b>\n"
     else:
-        return "\n\n[<green>{level}</green>] \u2014 <b><blue>{extra[name]}</blue></b>\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><green>{message}</green></b>"
+        return "\n[<green>{level}</green>]\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><green>{message}</green></b>\n"
+
+def filter_level(record, level):
+    return record["level"].name == level
 
 def init_loggers(dp: Dispatcher):
-    folder_dir = os.path.join(os.path.dirname(os.path.abspath(__name__)).replace("\\src", ''), 'logs')
-    aiogram_file_dir = os.path.join(folder_dir, "aiogram_logs.txt")
-    database_file_dir = os.path.join(folder_dir, "database_logs.txt")
+    info_path = 'logs/info.log'
+    debug_path = 'logs/debug.log'
+    error_path = 'logs/error.log'
 
     logger.remove()
     logger.add(sys.stderr, format=format_filter)
-    logger.add(aiogram_file_dir, format=format_filter, filter=make_filter('aiogram'), rotation="100MB")
-    logger.add(database_file_dir, format=format_filter, filter=make_filter("database"), rotation="100MB")
+    logger.add(info_path, filter=lambda record: filter_level(record, level='INFO'), format=format_filter, rotation="100MB")
+    logger.add(debug_path, filter=lambda record: filter_level(record, level='DEBUG'), format=format_filter, rotation="100MB")
+    logger.add(error_path, filter=lambda record: filter_level(record, level='ERROR'), format=format_filter,  rotation="100MB")
 
-    aiogram_logger = logger.bind(name="aiogram")
-    database_logger = logger.bind(name="database")
-
-    dp["aio_logger"] = aiogram_logger
-    dp["db_logger"] = database_logger
-    
 def init_middlewares(dp: Dispatcher):
     dp.message.middleware(Throttling())
     dp.callback_query.middleware(Throttling())
     dp.callback_query.middleware(CallbackMiddleware())
+    dp.update.outer_middleware(UnhandledMiddleware())
     dp.update.outer_middleware(UserMiddleware())
 
 async def main():
     bot = Bot(config.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
 
-    locales_path = os.path.join(os.path.abspath(__name__).replace(__name__, ''), "locales/{locale}/LC_MESSAGES")
+    locales_path = "locales/{locale}/LC_MESSAGES"
     i18n_middleware = I18nMiddleware(core=FluentRuntimeCore(path=locales_path), manager=UserManager())
 
     init_loggers(dp)
@@ -97,6 +91,7 @@ async def main():
 
     if config.WEBHOOK_URL:
         app = web.Application()
+        await bot.delete_webhook(drop_pending_updates=True)
         webhook_requests_handler = SimpleRequestHandler(
             dispatcher=dp,
             bot=bot
@@ -105,22 +100,20 @@ async def main():
 
         setup_application(app, dp, bot=bot)
 
-        await bot.delete_webhook(drop_pending_updates=True)
-
-        await web._run_app(app, host=config.WEBHOOK_SERVER_HOST)
+        await web._run_app(app, host=config.WEBHOOK_SERVER_HOST, port=config.WEBHOOK_SERVER_PORT)
     else:
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot)
 
-async def startup(bot: Bot, aio_logger):
+async def startup(bot: Bot):
     if config.WEBHOOK_URL:
-        aio_logger.info("Bot succesfully started")
+        logger.info("Bot succesfully started")
         await bot.set_webhook(f"{config.WEBHOOK_URL}{config.WEBHOOK_SERVER_PATH}")
     else:
-        aio_logger.info("Bot succesfully started")
+        logger.info("Bot succesfully started")
 
-async def shutdown(bot: Bot, aio_logger):
-    aio_logger.info("Bot stopped")
+async def shutdown(bot: Bot):
+    logger.info("Bot stopped")
     await bot.session.close()
 
 if __name__ == "__main__":

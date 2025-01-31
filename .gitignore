@@ -3,8 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-#project logs
+#project
 logs/
+.env
 
 # C extensions
 *.so

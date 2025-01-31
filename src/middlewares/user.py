@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Awaitable
+from loguru import logger
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
@@ -14,7 +15,6 @@ class UserMiddleware(BaseMiddleware):
     ):
         db = data['db']
         event_user = data['event_from_user']
-        db_logger = data['db_logger']
 
         uid = event_user.id
 
@@ -22,7 +22,7 @@ class UserMiddleware(BaseMiddleware):
         if not user:
             language = event_user.language_code if event_user.language_code in ["en", "ru"] else 'en'
             user = await db.create_user(event_user, language=language)
-            db_logger.info(f"User with id {uid} was added")
+            logger.info(f"User with id {uid} was added")
 
         else:
             user.first_name = event_user.first_name
