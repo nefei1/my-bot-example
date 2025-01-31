@@ -91,7 +91,6 @@ async def main():
 
     if config.WEBHOOK_URL:
         app = web.Application()
-        await bot.delete_webhook(drop_pending_updates=True)
         webhook_requests_handler = SimpleRequestHandler(
             dispatcher=dp,
             bot=bot
@@ -108,7 +107,7 @@ async def main():
 async def startup(bot: Bot):
     if config.WEBHOOK_URL:
         logger.info("Bot succesfully started")
-        await bot.set_webhook(f"{config.WEBHOOK_URL}{config.WEBHOOK_SERVER_PATH}")
+        await bot.set_webhook(f"{config.WEBHOOK_URL}{config.WEBHOOK_SERVER_PATH}", drop_pending_updates=True)
     else:
         logger.info("Bot succesfully started")
 
