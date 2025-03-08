@@ -26,5 +26,3 @@ class UnhandledMiddleware(BaseMiddleware):
 
             text = f"Uhandled event:{user_t}{chat_t}"
             logger.debug(text)
-
-        return await handler(event, data)
