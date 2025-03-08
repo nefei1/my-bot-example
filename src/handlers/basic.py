@@ -13,7 +13,6 @@ router = Router()
 
 @router.message(Command('start'))
 async def start_cmd(m: Message, i18n: I18nContext, user: User, **kw):
-    await m.bot.send_message('efefe', 'eo')
     uid = m.from_user.id
     first_name = m.from_user.first_name
 
