@@ -14,15 +14,22 @@ class UnhandledMiddleware(BaseMiddleware):
     ):
         res = await handler(event, data)
         if res is UNHANDLED:
-            user = data['event_from_user']
-            chat = data['event_chat']
+            user = event.from_user
+            chat = event.chat
 
-            if user.id == chat.id:
-                chat_t = None
-                user_t = f"\nUser: {user.first_name} | {user.username} | {user.id} "
+            if not chat:
+                chat_t = ''
+                user_t = f"\n\n👤 User:\n   ├ 🆔 ID: {user.uid}\n   ├ 📛 Name: {user.first_name}\n   └ 📝 Username: {user.username or '\u2014'}"
             else:
-                user_t = f"\nUser: {user.first_name} | {user.username} | {user.id} "
-                chat_t = f"\nChat: {chat.title} | {chat.id}" 
+                user_t = f"\n\n👤 User:\n   ├ 🆔 ID: {user.uid}\n   ├ 📛 Name: {user.first_name}\n   └ 📝 Username: {user.username or '\u2014'}"
+                chat_t = f"\n\n💬 Chat:\n   ├ 🆔 ID: {chat.chat_id}\n   ├ 🏷️ Title: {chat.title}\n   └ 💡 Type: Group" 
 
-            text = f"Uhandled event:{user_t}{chat_t}"
-            logger.debug(text)
+            if event.message:
+                event_t = f'\n\n🔧 Event: {event.message.text}'
+            elif event.callback_query:
+                event_t = f'\n\n🔧 Event: {event.callback_query.data}'
+            else:
+                event_t = ''
+
+            text = f"Uhandled event:{user_t}{chat_t}{event_t}"
+            logger.unhandled(text)

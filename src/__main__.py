@@ -21,6 +21,7 @@ from src.data import config
 from src.db import Base, UserManager
 from src.keyboards import set_commands
 from src.middlewares.unhandled import UnhandledMiddleware
+from src.utils.func import custon_log, filter_level, format_filter
 
 async def init_db(dp: Dispatcher):
     engine = create_async_engine(config.DB_LINK)
@@ -38,27 +39,28 @@ async def init_db(dp: Dispatcher):
 
     logger.info(f"Succesfully connected to database\nVersion - {version}")
 
-def format_filter(message):
-    if message["level"].name == "ERROR":
-        return "\n[<red>{level}</red>]\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><red>{message}</red></b>\n"
-    elif message["level"].name in ["WARNING", "DEBUG"]:
-        return "\n[<yellow>{level}</yellow>]\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><yellow>{message}</yellow></b>\n"
-    else:
-        return "\n[<green>{level}</green>]\n\n| Time: <b><green>{time:YYYY-MM-DD HH:mm:ss}</green></b>\n| File-func-line: <cyan>{name}:{function}:</cyan><red>{line}</red>\n<b><green>{message}</green></b>\n"
-
-def filter_level(record, level):
-    return record["level"].name == level
-
 def init_loggers(dp: Dispatcher):
+    logger.debug = custon_log(logger.debug)
+    logger.error = custon_log(logger.error)
+    logger.info = custon_log(logger.info)
+    
     info_path = 'logs/info.log'
     debug_path = 'logs/debug.log'
     error_path = 'logs/error.log'
+    unhandled_path = 'logs/unhandled.log'
+
+    logger.level("UNHANDLED", no=38)
 
     logger.remove()
+
     logger.add(sys.stderr, format=format_filter)
     logger.add(info_path, filter=lambda record: filter_level(record, level='INFO'), format=format_filter, rotation="100MB")
     logger.add(debug_path, filter=lambda record: filter_level(record, level='DEBUG'), format=format_filter, rotation="100MB")
     logger.add(error_path, filter=lambda record: filter_level(record, level='ERROR'), format=format_filter,  rotation="100MB")
+    logger.add(unhandled_path, filter=lambda record: filter_level(record, level='UNHANDLED'), format=format_filter,  rotation="100MB")
+
+    logger.unhandled = lambda *a, **kw: logger.log("UNHANDLED", *a, *kw)
+    logger.unhandled = custon_log(logger.unhandled)
     
 def init_middlewares(dp: Dispatcher):
     dp.update.outer_middleware(UnhandledMiddleware())
