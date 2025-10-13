@@ -9,6 +9,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiogram import Dispatcher, Bot
 from aiogram.enums import ParseMode 
 from aiogram.client.default import DefaultBotProperties
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram_i18n import I18nMiddleware
 from aiogram_i18n.cores.fluent_runtime_core import FluentRuntimeCore
 
@@ -17,14 +18,15 @@ from sqlalchemy import text
 
 from src.handlers import get_routers
 from src.middlewares import DbMiddleware, Throttling, UserMiddleware, CallbackMiddleware
-from src.data import config
+from src.data import settings
 from src.db import Base, UserManager
 from src.keyboards import set_commands
 from src.middlewares.unhandled import UnhandledMiddleware
+from src.settings import Settings
 from src.utils.func import custon_log, filter_level, format_filter
 
 async def init_db(dp: Dispatcher):
-    engine = create_async_engine(config.DB_LINK)
+    engine = create_async_engine(settings.DB_LINK)
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -70,8 +72,16 @@ def init_middlewares(dp: Dispatcher):
     dp.update.outer_middleware(UserMiddleware())
 
 async def main():
-    bot = Bot(config.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = Dispatcher()
+    settings = Settings()
+
+    bot = Bot(settings.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    
+    storage = RedisStorage(redis=settings.redis_dsn()) if settings.redis_dsn() else None
+
+    dp = Dispatcher(
+        storage=storage,
+        settings=settings
+    )
 
     locales_path = os.path.join(os.path.abspath(__name__).replace(__name__, ''), "locales/{locale}/LC_MESSAGES")
     i18n_middleware = I18nMiddleware(core=FluentRuntimeCore(path=locales_path), manager=UserManager())
@@ -82,6 +92,7 @@ async def main():
 
     i18n_middleware.setup(dispatcher=dp)
 
+    dp.workflow_data
     dp.startup.register(startup)
     dp.shutdown.register(shutdown)
 
@@ -90,27 +101,29 @@ async def main():
 
     await set_commands(bot)
 
-    if config.WEBHOOK_URL:
+    if settings.webhooks:
         app = web.Application()
         webhook_requests_handler = SimpleRequestHandler(
             dispatcher=dp,
-            bot=bot
-        )
-        webhook_requests_handler.register(app, path=config.WEBHOOK_SERVER_PATH)
-
+            bot=bot,
+            secret_token=settings.webhook_secret_token.get_secret_value()
+        ).register(app, '/webhook')
         setup_application(app, dp, bot=bot)
 
-        await bot.delete_webhook(drop_pending_updates=True)
-
-        await web._run_app(app, host=config.WEBHOOK_SERVER_HOST)
+        await web._run_app(app, host='0.0.0.0', port=8080)
     else:
-        await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
+        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
-async def startup(bot: Bot):
-    if config.WEBHOOK_URL:
+async def startup(bot: Bot, settings: Settings, dispatcher: Dispatcher):
+    await bot.delete_webhook(drop_pending_updates=True)
+
+    if settings.WEBHOOKS:
         logger.info("Bot succesfully started")
-        await bot.set_webhook(f"{config.WEBHOOK_URL}{config.WEBHOOK_SERVER_PATH}")
+        await bot.set_webhook(
+            url=settings.webhook_url.get_secret_value(),
+            allowed_updates=dispatcher.resolve_used_update_types(),
+            secret_token=settings.webhook_secret_token.get_secret_value()
+            )
     else:
         logger.info("Bot succesfully started")
 
