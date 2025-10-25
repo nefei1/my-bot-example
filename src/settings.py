@@ -4,7 +4,7 @@ from sqlalchemy import URL
 from redis import Redis
 
 class PostgresqlSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="PSQL")
+    model_config = SettingsConfigDict(env_prefix="PSQL_")
 
     host: str
     port: int
@@ -13,7 +13,7 @@ class PostgresqlSettings(BaseSettings):
     db: str
 
 class RedisSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix='REDIS')
+    model_config = SettingsConfigDict(env_prefix='REDIS_')
 
     host: str
     port: int
