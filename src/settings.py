@@ -1,7 +1,10 @@
+from dotenv import load_dotenv
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
-from redis import Redis
+from redis.asyncio import Redis
+
+load_dotenv()
 
 class PostgresqlSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PSQL_")
@@ -10,7 +13,7 @@ class PostgresqlSettings(BaseSettings):
     port: int
     user: str
     password: SecretStr
-    db: str
+    name: str
 
 class RedisSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix='REDIS_')
@@ -33,8 +36,8 @@ class Settings(BaseSettings):
     webhook_url: SecretStr
     webhook_secret_token: SecretStr
 
-    psql = PostgresqlSettings()
-    redis = RedisSettings()
+    psql: PostgresqlSettings = PostgresqlSettings()
+    redis: RedisSettings = RedisSettings()
     
     def psql_url(self) -> URL:
         return URL.create(
@@ -43,7 +46,7 @@ class Settings(BaseSettings):
             password=self.psql.password.get_secret_value(),
             host=self.psql.host,
             port=self.psql.port,
-            database=self.psql.db
+            database=self.psql.name
         )
     
     def redis_dsn(self) -> Redis:

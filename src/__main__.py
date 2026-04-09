@@ -18,14 +18,13 @@ from sqlalchemy import text
 
 from src.handlers import get_routers
 from src.middlewares import DbMiddleware, Throttling, UserMiddleware, CallbackMiddleware
-from src.data import settings
 from src.db import Base, UserManager
 from src.keyboards import set_commands
 from src.middlewares.unhandled import UnhandledMiddleware
 from src.settings import Settings
 from src.utils.func import custon_log, filter_level, format_filter
 
-async def init_db(dp: Dispatcher):
+async def init_db(dp: Dispatcher, settings):
     engine = create_async_engine(settings.DB_LINK)
 
     async with engine.begin() as conn:
@@ -87,7 +86,7 @@ async def main():
     i18n_middleware = I18nMiddleware(core=FluentRuntimeCore(path=locales_path), manager=UserManager())
 
     init_loggers(dp)
-    await init_db(dp)
+    await init_db(dp, settings)
     init_middlewares(dp)
 
     i18n_middleware.setup(dispatcher=dp)
@@ -117,7 +116,7 @@ async def main():
 async def startup(bot: Bot, settings: Settings, dispatcher: Dispatcher):
     await bot.delete_webhook(drop_pending_updates=True)
 
-    if settings.WEBHOOKS:
+    if settings.webhooks:
         logger.info("Bot succesfully started")
         await bot.set_webhook(
             url=settings.webhook_url.get_secret_value(),
