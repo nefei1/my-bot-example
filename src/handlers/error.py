@@ -39,4 +39,4 @@ async def error_handler(event: ErrorEvent, event_from_user, event_chat):
 
     filename = os.path.relpath(last_frame.filename, start=root)
 
-    logger.error(f"👤 User:\n   ├ 🆔 ID: {event_from_user.uid}\n   ├ 📛 Name: {event_from_user.first_name}\n   └ 📝 Username: {event_from_user or '\u2014'}\n\n💬 Chat:\n   ├ 🆔 ID: {chat_id}\n   ├ 🏷️ Title: {title}\n   └ 💡 Type: {chat_type}\n\n📁 File: {filename}\n🔧 Func: {func}\n📍 Line: {line}\n🧾 Code: {code_line}\n\n❌ Exc: {type(exc).__name__}: {exc}")
+    logger.error(f"👤 User:\n   ├ 🆔 ID: {event_from_user.id}\n   ├ 📛 Name: {event_from_user.first_name}\n   └ 📝 Username: {event_from_user or '\u2014'}\n\n💬 Chat:\n   ├ 🆔 ID: {chat_id}\n   ├ 🏷️ Title: {title}\n   └ 💡 Type: {chat_type}\n\n📁 File: {filename}\n🔧 Func: {func}\n📍 Line: {line}\n🧾 Code: {code_line}\n\n❌ Exc: {type(exc).__name__}: {exc}")

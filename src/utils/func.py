@@ -1,6 +1,6 @@
 import json
 
-def custon_log(func):
+def custom_log(func):
     def wrapper(*args, **kwargs):
         parts = []
         for arg in args:

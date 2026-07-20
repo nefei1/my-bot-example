@@ -9,10 +9,10 @@ load_dotenv()
 class PostgresqlSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PSQL_")
 
-    host: str
-    port: int
     user: str
     password: SecretStr
+    host: str
+    port: int
     name: str
 
 class RedisSettings(BaseSettings):

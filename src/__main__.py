@@ -22,10 +22,10 @@ from src.db import Base, UserManager
 from src.keyboards import set_commands
 from src.middlewares.unhandled import UnhandledMiddleware
 from src.settings import Settings
-from src.utils.func import custon_log, filter_level, format_filter
+from src.utils.func import custom_log, filter_level, format_filter
 
-async def init_db(dp: Dispatcher, settings):
-    engine = create_async_engine(settings.DB_LINK)
+async def init_db(dp: Dispatcher, settings: Settings):
+    engine = create_async_engine(settings.psql_url())
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -41,9 +41,9 @@ async def init_db(dp: Dispatcher, settings):
     logger.info(f"Succesfully connected to database\nVersion - {version}")
 
 def init_loggers(dp: Dispatcher):
-    logger.debug = custon_log(logger.debug)
-    logger.error = custon_log(logger.error)
-    logger.info = custon_log(logger.info)
+    logger.debug = custom_log(logger.debug)
+    logger.error = custom_log(logger.error)
+    logger.info = custom_log(logger.info)
     
     info_path = 'logs/info.log'
     debug_path = 'logs/debug.log'
@@ -61,7 +61,7 @@ def init_loggers(dp: Dispatcher):
     logger.add(unhandled_path, filter=lambda record: filter_level(record, level='UNHANDLED'), format=format_filter,  rotation="100MB")
 
     logger.unhandled = lambda *a, **kw: logger.log("UNHANDLED", *a, *kw)
-    logger.unhandled = custon_log(logger.unhandled)
+    logger.unhandled = custom_log(logger.unhandled)
     
 def init_middlewares(dp: Dispatcher):
     dp.update.outer_middleware(UnhandledMiddleware())

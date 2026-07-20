@@ -2,8 +2,10 @@ from typing import Any, Awaitable, Callable, Dict
 from loguru import logger
 
 from aiogram.dispatcher.event.bases import UNHANDLED
-from aiogram.types import TelegramObject
+from aiogram.types import TelegramObject, Update
 from aiogram import BaseMiddleware
+
+from src.db.models import Database
 
 class UnhandledMiddleware(BaseMiddleware):
     async def __call__(
@@ -14,7 +16,9 @@ class UnhandledMiddleware(BaseMiddleware):
     ):
         res = await handler(event, data)
         if res is UNHANDLED:
-            user = event.from_user
+            db: Database = data['db']
+
+            user = await db.get_user(event.from_user)
             chat = event.chat
 
             if not chat:
