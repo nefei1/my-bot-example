@@ -1,1 +1,1 @@
-Hi
+Example template 
